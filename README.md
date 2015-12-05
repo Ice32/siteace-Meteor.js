@@ -6,12 +6,13 @@ Here is the full specification:
 
     You are to make a website aggregator application. The purpose of the application is to allow users to share, 
     discuss and rate pages they find on the internet. 
-    You are provided with some starter code which displays a simple list of websites. You can gain up to 70% by implementing 
-    the following features:
+    You are provided with some starter code which displays a simple list of websites. You can gain up
+    to 70% by implementing the following features:
 
     Users can register and login.
 
-    Users can post new websites if they are logged in. Websites posted by users should have an URL and a description.
+    Users can post new websites if they are logged in. Websites posted by users 
+    should have an URL and a description.
 
     Users can up and down vote webpages by clicking a plus or a minus button.
 
@@ -21,7 +22,8 @@ Here is the full specification:
 
     Users can move to a detail page for a website (using routing). 
 
-    On the detail page, users can post comments about a webpage, and they are displayed below the description of the webpage.
+    On the detail page, users can post comments about a webpage, and they are displayed 
+    below the description of the webpage.
 
 
     You can gain a further 30% by implementing one or more of the following features:
