@@ -7,6 +7,11 @@
                 </a>
             </div>
             <p class="navbar-text">{{>loginButtons}}</p>
+           <div class="navbar-form navbar-right" id="searchForm" role="search">
+                <div class="form-group">
+                    <input id="searchField" type="text" class="form-control" placeholder="Search">
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -14,5 +19,8 @@
     <div class="container">
         {{> website_form}}
         {{> website_list}}
+        <div id="noResults">
+
+        </div>
     </div>
 </template>

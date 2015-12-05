@@ -10,6 +10,7 @@ function addHttp(link){
 }
 
 Session.set("host", undefined);
+Session.set("searchTerm", undefined);
 Accounts.ui.config({
 	passwordSignupFields:"USERNAME_AND_OPTIONAL_EMAIL"
 });
@@ -33,9 +34,19 @@ Router.route("/image/:_id", function(){
 
 	// helper function that returns all available websites
 	Template.website_list.helpers({
-		websites:function(){
-			return Websites.find({}, {sort:{upvotes:-1}});
-		}
+        websites:function(){
+            if(Session.get("searchTerm")){
+                if(Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} }).count() != 0){
+                    $("#noResults").html("");
+                    return Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} });
+                }
+                else{
+                    $("#noResults").html("No results found...");
+                    return [];
+                }
+            }
+            return Websites.find({}, {sort:{upvotes:-1}});
+        }
 	});
 
 	Template.website_item.events({
@@ -193,5 +204,15 @@ Template.website_form.helpers({
                 return description.descriptionAutofill;
             }
         }
+    }
+});
+
+Template.mainTemplate.events({
+    "keyup #searchForm":function(e){
+        e.preventDefault();
+        var $searchField = $("#searchField");
+        var reg = ".*";
+        reg += $searchField.val() + ".*";
+        Session.set("searchTerm", reg);
     }
 });
