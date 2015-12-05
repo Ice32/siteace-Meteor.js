@@ -1,0 +1,42 @@
+<!-- template that displays individual website entries -->
+<template name="website_item">
+    <li>
+        <div class="websiteText">
+            <a href="{{url}}">{{title}}</a>
+            <p>
+                {{description}}
+            </p>
+        </div>
+        <p>
+            <span class="upvotes">Upvotes: {{upvotes}}</span> <br />
+            <span class="downvotes">Downvotes: {{downvotes}} </span> <br />
+            Added on:{{createdOn}}
+        </p>
+        <a href="/image/{{_id}}">Details...</a><br />
+        <a href="#" class="openComments">Comments...</a>
+        <div class="commentDiv">
+            {{#if commentsExist}}
+                {{#each comments}}
+                    <div class="singleComment">
+                        <p>
+                            {{this}}
+                        </p>
+                    </div>
+                {{/each}}
+            {{else}}
+                No comments yet...
+            {{/if}}
+
+        </div>
+        <br/>
+        {{#if currentUser}}
+            <a href="#" class="btn btn-default js-upvote">
+                <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+            </a>
+            <a href="#" class="btn btn-default js-downvote">
+                <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+            </a>
+        {{/if}}
+        <!-- you will be putting your up and down vote buttons in here! -->
+    </li>
+</template>
