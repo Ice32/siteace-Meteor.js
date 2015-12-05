@@ -5,35 +5,18 @@
 
 Meteor.methods({
     autofill:function(submittedLink){
+        if(submittedLink){
+            if(submittedLink.indexOf("http") == -1){
+                var stringTemp = "http://";
+                stringTemp += submittedLink;
+                submittedLink = stringTemp;
+            }
 
-        var url = Npm.require("url");
-        var parsedUrl = url.parse(submittedLink);
-        if(!parsedUrl.hostname){
-            throw new Meteor.Error("invalid url", "url should be using the strict formating");
-        }
-
-
-
-        //var http = Meteor.npmRequire('http');
-        //var options = {
-        //
-        //    method: 'GET',
-        //    path: 'www.meteor.com'
-        //};
-        //var req = http.request(options);
-        //req.on('response', function(response) {
-        //    console.log(response);
-        //});
-
-
-
-
-
-
-
-
-
-
+            var url = Npm.require("url");
+            var parsedUrl = url.parse(submittedLink);
+            if(!parsedUrl.hostname){
+                throw new Meteor.Error("invalid url", "url should be using the strict formating");
+            }
 
 
         HTTP.call("GET", submittedLink,
@@ -49,14 +32,17 @@ Meteor.methods({
                         if(!description){
                             description = $('meta[itemprop=description]').attr('content');
                             if(!description){
+                                //for debugging purposes
                                 console.log(result.content);
+                                console.log(result.content.indexOf("description"));
+                                console.log(result.content.indexOf("keywords"));
                             }
                         }
                     }
                     console.log("host na serveru je " + parsedUrl.hostname);
 
-                    if(misc.find({hostname:parsedUrl.hostname}).count() == 0){
-                        misc.insert({hostname:parsedUrl.hostname, titleAutofill:titleCheerio, descriptionAutofill:description});
+                    if(autofillCollection.find({hostname:parsedUrl.hostname}).count() == 0){
+                        autofillCollection.insert({hostname:parsedUrl.hostname, titleAutofill:titleCheerio, descriptionAutofill:description});
                     }
                 }
                 else{
@@ -64,6 +50,17 @@ Meteor.methods({
                 }
             });
     }
+    },
+    addWebsite:function(website){
+        if(!Meteor.userId()){
+            return false;
+        }
+        if(Websites.findOne({url:website.url})){
+            return "exists";
+        }
+        Websites.insert(website);
+    }
+
 });
 
 

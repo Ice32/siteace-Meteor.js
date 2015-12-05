@@ -1,5 +1,13 @@
 document.title = "siteace";
 
+function addHttp(link){
+    if(link.indexOf("http") == -1){
+        var stringTemp = "http://";
+        stringTemp += link;
+        return stringTemp;
+    }
+    return link;
+}
 
 Session.set("host", undefined);
 Accounts.ui.config({
@@ -32,15 +40,11 @@ Router.route("/image/:_id", function(){
 
 	Template.website_item.events({
 		"click .js-upvote":function(event){
-			// example of how you can access the id for the website in the database
-			// (this is the data context for the template)
-			//var website_id = this._id;
             var userId = Meteor.userId();
             if(!userId){
                 return false;
             }
             var votesList = this.votedBy;
-			//console.log("Up voting website with id "+website_id);
 			// put the code in here to add a vote to a website!
             for(var x in votesList){
                 if(votesList[x] == userId){
@@ -56,7 +60,6 @@ Router.route("/image/:_id", function(){
 
 			// example of how you can access the id for the website in the database
 			// (this is the data context for the template)
-			//var website_id = this._id;
             var userId = Meteor.userId();
             if(!userId){
                 return false;
@@ -102,38 +105,53 @@ Template.website_item.helpers({
 			var url = event.target.url.value;
 			var title = event.target.title.value;
 			var description = event.target.description.value;
+            if(url){
+                url = addHttp(url);
+                if(Websites.findOne({url:url})){
+                    alert("already exists");
+                    return false;
+                }
+                var theWebsite = {
+                    title:title,
+                    url:url,
+                    description:description,
+                    createdOn:new Date(),
+                    upvotes:0,
+                    downvotes:0,
+                    comments:[],
+                    votedBy:[],
+                    commentedBy:[]
+                };
+                Meteor.call("addWebsite", theWebsite);
+                $("#website_form").toggle('slow');
+                $("#url").val("");
+                $("#title").val("");
+                $("#description").val("");
 
-            Websites.insert({
-                title:title,
-                url:url,
-                description:description,
-                createdOn:new Date(),
-                upvotes:0,
-                downvotes:0,
-                comments:[],
-                votedBy:[],
-                commentedBy:[]
-            });
-            $("#website_form").toggle('slow');
+            }
+
 			//  put your website saving code in here!	
 
 			return false;// stop the form submit from reloading the page
 
 		},
         "blur #url":function(event){
-            var $target = $(event.target);
-
-            var getLocation = function(href) {
+            function getLocation(href) {
                 var l = document.createElement("a");
                 l.href = href;
                 return l;
-            };
-            var host = getLocation($target.val());
-            console.log("host na klijentu je " + host.hostname);
-            if(host){
-                Session.set("host", host.hostname);
             }
-            Meteor.call("autofill", $target.val());
+
+            var $target = $(event.target);
+            var targetValue = $target.val();
+            if(targetValue){
+                targetValue = addHttp(targetValue);
+                var host = getLocation(targetValue);
+                if(host){
+                    Session.set("host", host.hostname);
+                }
+                Meteor.call("autofill", targetValue);
+            }
         }
 	});
 Template.websiteDetail.events({
@@ -161,7 +179,7 @@ Template.websiteDetail.events({
 Template.website_form.helpers({
     titleAutofill:function(){
         if(Session.get("host")){
-            var title = misc.findOne({hostname:Session.get("host")});
+            var title = autofillCollection.findOne({hostname:Session.get("host")});
             if(title){
                 return title.titleAutofill;
             }
@@ -170,7 +188,7 @@ Template.website_form.helpers({
     },
     descriptionAutofill:function(){
         if(Session.get("host")){
-            var description = misc.findOne({hostname:Session.get("host")});
+            var description = autofillCollection.findOne({hostname:Session.get("host")});
             if(description){
                 return description.descriptionAutofill;
             }
