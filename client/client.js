@@ -1,5 +1,14 @@
 document.title = "siteace";
 
+/*check if the user has his own document in the userAccounts colletion
+I tried to have that document created right after the user registers, but don't really know how*/
+Deps.autorun(function () {
+    if (Meteor.user()){
+        Meteor.call("newUser");
+    }
+});
+
+//function that adds prefix http:// if the user didnt enter it
 function addHttp(link){
     if(link.indexOf("http") == -1){
         var stringTemp = "http://";
@@ -9,12 +18,44 @@ function addHttp(link){
     return link;
 }
 
+//got hostname of the link on the client-side
+function getLocation(href) {
+    var l = document.createElement("a");
+    l.href = href;
+    return l;
+}
+
+//upvote a website
+function upvote(){
+    var userId = Meteor.userId();
+    if(!userId){
+        return false;
+    }
+    Meteor.call("upvote", this._id);
+    return false;
+}
+
+//downvote a website
+function downvote(){
+    var userId = Meteor.userId();
+    if(!userId){
+        return false;
+    }
+    Meteor.call("downvote", this._id);
+    return false;
+}
+
+//user for autofill
 Session.set("host", undefined);
+
+//user isn't searching
 Session.set("searchTerm", undefined);
+
 Accounts.ui.config({
 	passwordSignupFields:"USERNAME_AND_OPTIONAL_EMAIL"
 });
 
+//all of the routing
 Router.configure({
     layoutTemplate: 'layout'
 });
@@ -35,8 +76,9 @@ Router.route("/image/:_id", function(){
 	// helper function that returns all available websites
 	Template.website_list.helpers({
         websites:function(){
+            //if the user is searching, return only websites that contain the search term
             if(Session.get("searchTerm")){
-                if(Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} }).count() != 0){
+                if(Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}).count() != 0){
                     $("#noResults").html("");
                     return Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} });
                 }
@@ -45,49 +87,14 @@ Router.route("/image/:_id", function(){
                     return [];
                 }
             }
+            //otherwise return all of the websites
             return Websites.find({}, {sort:{upvotes:-1}});
         }
 	});
 
 	Template.website_item.events({
-		"click .js-upvote":function(event){
-            var userId = Meteor.userId();
-            if(!userId){
-                return false;
-            }
-            var votesList = this.votedBy;
-			// put the code in here to add a vote to a website!
-            for(var x in votesList){
-                if(votesList[x] == userId){
-                    return false;
-                }
-            }
-            Websites.update({_id:this._id}, {$inc:{upvotes:1}} );
-            Websites.update({_id:this._id}, {$addToSet:{votedBy:userId}});
-
-			return false;// prevent the button from reloading the page
-		}, 
-		"click .js-downvote":function(event){
-
-			// example of how you can access the id for the website in the database
-			// (this is the data context for the template)
-            var userId = Meteor.userId();
-            if(!userId){
-                return false;
-            }
-			//console.log("Down voting website with id "+website_id);
-            var votesList = this.votedBy;
-            for(var x in votesList){
-                if(votesList[x] == userId){
-                    return false;
-                }
-            }
-            Websites.update({_id:this._id}, {$inc:{downvotes:1}} );
-            Websites.update({_id:this._id}, {$addToSet:{votedBy:userId}});
-			// put the code in here to remove a vote from a website!
-
-			return false;// prevent the button from reloading the page
-		},
+		"click .js-upvote":upvote,
+		"click .js-downvote":downvote,
         "click .openComments":function(e){
             var button = $(e.target);
             button = button.next();
@@ -108,7 +115,7 @@ Template.website_item.helpers({
 });
 
 	Template.website_form.events({
-		"click .js-toggle-website-form":function(event){
+		"click .js-toggle-website-form":function(){
 			$("#website_form").toggle('slow');
 		}, 
 		"submit .js-save-website-form":function(event){
@@ -116,6 +123,7 @@ Template.website_item.helpers({
 			var url = event.target.url.value;
 			var title = event.target.title.value;
 			var description = event.target.description.value;
+
             if(url){
                 url = addHttp(url);
                 if(Websites.findOne({url:url})){
@@ -133,26 +141,21 @@ Template.website_item.helpers({
                     votedBy:[],
                     commentedBy:[]
                 };
+                if(!theWebsite.title){
+                    var defaultTitle = getLocation(theWebsite.url);
+                    defaultTitle = defaultTitle.hostname;
+                    theWebsite.title = defaultTitle;
+                }
                 Meteor.call("addWebsite", theWebsite);
+
                 $("#website_form").toggle('slow');
                 $("#url").val("");
                 $("#title").val("");
                 $("#description").val("");
-
             }
-
-			//  put your website saving code in here!	
-
-			return false;// stop the form submit from reloading the page
-
+			return false;
 		},
         "blur #url":function(event){
-            function getLocation(href) {
-                var l = document.createElement("a");
-                l.href = href;
-                return l;
-            }
-
             var $target = $(event.target);
             var targetValue = $target.val();
             if(targetValue){
@@ -169,7 +172,6 @@ Template.websiteDetail.events({
     "submit #submitComment":function(e){
         e.preventDefault();
         var textarea = $(".commentBox");
-        var id = textarea.attr("id");
         var comment = textarea.val();
 
         var commentsList = this.commentedBy;
@@ -179,12 +181,12 @@ Template.websiteDetail.events({
                 return false;
             }
         }
-
-        Websites.update({_id:id}, {$addToSet:{comments:comment}});
-        Websites.update({_id:this._id}, {$addToSet:{commentedBy:Meteor.userId()}});
+        Meteor.call("comment", comment, this._id);
         textarea.val("");
         return false;
-    }
+    },
+    "click .js-upvote":upvote,
+    "click .js-downvote":downvote
 });
 
 Template.website_form.helpers({

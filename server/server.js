@@ -14,9 +14,6 @@ Meteor.methods({
 
             var url = Npm.require("url");
             var parsedUrl = url.parse(submittedLink);
-            if(!parsedUrl.hostname){
-                throw new Meteor.Error("invalid url", "url should be using the strict formating");
-            }
 
 
         HTTP.call("GET", submittedLink,
@@ -33,13 +30,12 @@ Meteor.methods({
                             description = $('meta[itemprop=description]').attr('content');
                             if(!description){
                                 //for debugging purposes
-                                console.log(result.content);
+                                /*console.log(result.content);
                                 console.log(result.content.indexOf("description"));
-                                console.log(result.content.indexOf("keywords"));
+                                console.log(result.content.indexOf("keywords"));*/
                             }
                         }
                     }
-                    console.log("host na serveru je " + parsedUrl.hostname);
 
                     if(autofillCollection.find({hostname:parsedUrl.hostname}).count() == 0){
                         autofillCollection.insert({hostname:parsedUrl.hostname, titleAutofill:titleCheerio, descriptionAutofill:description});
@@ -52,20 +48,82 @@ Meteor.methods({
     }
     },
     addWebsite:function(website){
+        var validator = Meteor.npmRequire('validator');
+        if(!validator.isURL(website.url)){
+            throw new Meteor.Error("invalid url", "url should be using the strict formating");
+        }
         if(!Meteor.userId()){
             return false;
         }
         if(Websites.findOne({url:website.url})){
             return "exists";
         }
-        Websites.insert(website);
-    }
+        Websites.insert(website, function(error, result){
+            userAccounts.update({user:Meteor.userId()}, {$addToSet:{addedWebsites:result}});
+        });
 
+
+    },
+    newUser:function(){
+        if(userAccounts.find({user:Meteor.userId()}).count() == 0){
+            userAccounts.insert({
+                user:Meteor.userId(),
+                addedWebsites:[],
+                upvoted:[],
+                downvoted:[],
+                commented:[]
+            })
+        }
+    },
+    upvote:function(websiteId){
+        if(!Meteor.user()){
+            return false;
+        }
+        var website = Websites.findOne({_id:websiteId});
+        var votesList = website.votedBy;
+        for(var x in votesList){
+            if(votesList[x] == Meteor.userId()){
+                return false;
+            }
+        }
+        Websites.update({_id:websiteId}, {$inc:{upvotes:1}} );
+        Websites.update({_id:websiteId}, {$addToSet:{votedBy:Meteor.userId()}});
+        userAccounts.update({user:Meteor.userId()}, {$addToSet:{upvoted:websiteId}});
+    },
+    downvote:function(websiteId){
+        if(!Meteor.user()){
+            return false;
+        }
+        var website = Websites.findOne({_id:websiteId});
+        var votesList = website.votedBy;
+        for(var x in votesList){
+            if(votesList[x] == Meteor.userId()){
+                return false;
+            }
+        }
+        Websites.update({_id:websiteId}, {$inc:{downvotes:1}} );
+        Websites.update({_id:websiteId}, {$addToSet:{votedBy:Meteor.userId()}});
+        userAccounts.update({user:Meteor.userId()}, {$addToSet:{downvoted:websiteId}});
+    },
+    comment:function(comment, websiteId){
+        if(!Meteor.userId()){
+            return false;
+        }
+        var website = Websites.findOne({_id:websiteId});
+        var commentsList = website.commentedBy;
+        for(var x in commentsList){
+            if(commentsList[x] == Meteor.userId()){
+                return false;
+            }
+        }
+        Websites.update({_id:websiteId}, {$addToSet:{comments:comment}});
+        Websites.update({_id:websiteId}, {$addToSet:{commentedBy:Meteor.userId()}});
+        userAccounts.update({user:Meteor.userId()}, {$addToSet:{commented:websiteId}});
+    }
 });
 
 
 Meteor.startup(function () {
-    // code to run on server at startup
     if (!Websites.findOne()){
         console.log("No websites yet. Creating starter data.");
         Websites.insert({
