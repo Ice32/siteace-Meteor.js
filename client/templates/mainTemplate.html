@@ -6,6 +6,13 @@
                    Site Ace
                 </a>
             </div>
+            <ul class="nav navbar-nav">
+                <li class="active navigation"><a id="popularNav" href="#">Popular</a></li>
+                {{#if currentUser}}
+                <li class="navigation" ><a id="suggestedNav" href="#">Suggested</a></li>
+                <li class="navigation" ><a id="yourNav" href="#">Your websites</a></li>
+                {{/if}}
+            </ul>
             <p class="navbar-text">{{>loginButtons}}</p>
            <div class="navbar-form navbar-right" id="searchForm" role="search">
                 <div class="form-group">
@@ -17,10 +24,9 @@
 
 
     <div class="container">
-        {{> website_form}}
-        {{> website_list}}
+        {{>yield main}}
         <div id="noResults">
-
+            <!--if there are no website results, the user will be notified through this div -->
         </div>
     </div>
 </template>

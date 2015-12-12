@@ -51,20 +51,25 @@ Session.set("host", undefined);
 //user isn't searching
 Session.set("searchTerm", undefined);
 
+//user is on the homepage
+Session.set("tab", "popularNav");
+
 Accounts.ui.config({
 	passwordSignupFields:"USERNAME_AND_OPTIONAL_EMAIL"
 });
 
 //all of the routing
 Router.configure({
-    layoutTemplate: 'layout'
+    layoutTemplate: 'mainTemplate'
 });
 Router.route("/", function(){
-    this.render("mainTemplate", {
+    $("#searchField").show();
+    this.render("formAndList", {
         to:"main"
     })
 });
 Router.route("/image/:_id", function(){
+    $("#searchField").hide();
     this.render("websiteDetail", {
         to: "main",
         data:function(){
@@ -76,19 +81,113 @@ Router.route("/image/:_id", function(){
 	// helper function that returns all available websites
 	Template.website_list.helpers({
         websites:function(){
-            //if the user is searching, return only websites that contain the search term
-            if(Session.get("searchTerm")){
-                if(Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}).count() != 0){
-                    $("#noResults").html("");
-                    return Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} });
-                }
-                else{
-                    $("#noResults").html("No results found...");
+            var tab = Session.get("tab");
+            $("#searchField").show();
+
+            if(tab == "suggestedNav"){
+                //suggest websites to user based on what he/she has upvoted/commented
+                $("#searchField").hide();
+                //get everything the user has commented or upvoted (from the userAccounts collection)
+                var selectedS = userAccounts.findOne({user:Meteor.userId()}, {commented:1, _id:0}).commented;
+                var $selectedS = $(selectedS).toArray();
+                var selectedS2 = userAccounts.findOne({user:Meteor.userId()}, {upvoted:1, _id:0}).upvoted;
+                var $selectedS2 = $(selectedS2).toArray();
+                //$selectedS contains IDs all of the websites the current user has commented or upvoted
+                $selectedS = $selectedS.concat($selectedS2);
+                if($selectedS.length == 0){
+                    $("#noResults").html("No results...you haven't showed us what you like yet!");
                     return [];
                 }
+                $("#noResults").html("");
+                //searchTerms contains titles and descriptions of all those websites, separated in words
+                var searchTerms = [];
+                for(let element of $selectedS){
+                    var title = Websites.findOne({_id:element}).title;
+                    title = title.split(" ").filter(function(el) {return el.length != 0});
+                    var description = Websites.findOne({_id:element}).description;
+                    description = description.split(" ").filter(function(el) {return el.length != 0});
+                    searchTerms = searchTerms.concat(title);
+                    searchTerms = searchTerms.concat(description);
+                }
+                //now remove the duplicates and the works like "a" and "an"
+                var uniqueTerms = [];
+                $.each(searchTerms, function(i, el){
+                    if($.inArray(el, uniqueTerms) === -1){
+                        if(el != "a" && el != "to"&& el != "an"&& el != "do"&& el != "is"&& el != "and"&& el != "the"){
+                            uniqueTerms.push(el);
+                        }
+                    }
+                });
+                //termsFinal contains all of the websites found based on regex search through uniqueTerms
+                var termsFinal = [];
+                var escape = function(text) {
+                    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+                };
+                for(let term of uniqueTerms){
+                    term = escape(term);
+                    var expression = "(\\s|\\b)" + term + "(\\s|\\b)";
+                    var objectToConcat = Websites.find({$or: [{title: { $regex: expression, $options: 'ig' }}, {description: { $regex: expression, $options: 'ig' }}]}, {sort:{upvotes:-1} }).fetch();
+                    var doConcat = true;
+                    var first, second;
+                    for(var i = 0; i < objectToConcat.length;i++){
+                        first = objectToConcat[i].title;
+                        for(var j = 0; j < termsFinal.length;j++){
+                            second = termsFinal[j].title;
+                            if(first == second){
+                                doConcat = false;
+                            }
+                        }
+                        if(doConcat){
+                            termsFinal = termsFinal.concat(objectToConcat);
+                        }
+                    }
+                }
+                return termsFinal;
             }
-            //otherwise return all of the websites
-            return Websites.find({}, {sort:{upvotes:-1}});
+
+            else if(tab == "yourNav"){
+                $("#searchField").hide();
+                var selected = userAccounts.findOne({user:Meteor.userId()}, {addedWebsites:1, _id:0}).addedWebsites;
+                if(Websites.find({_id:{$in: selected}}).count() == 0){
+                    $("#noResults").html("You haven't added any websites yet :(");
+                    return [];
+                }
+                $("#noResults").html("");
+                return Websites.find({_id:{$in: selected}});
+
+            }
+            else if(tab == "popularNav"){
+                //if the user is searching, return only websites that contain the search term
+                if(Session.get("searchTerm")){
+                    if(Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}).count() != 0){
+                        $("#noResults").html("");
+                        return Websites.find({$or: [{title: { $regex: Session.get("searchTerm"), $options: 'i' }}, {description: { $regex: Session.get("searchTerm"), $options: 'i' }}]}, {sort:{upvotes:-1} });
+                    }
+                    else{
+                        $("#noResults").html("No results found...");
+                        return [];
+                    }
+                }
+                //otherwise return all of the websites
+                return  Websites.find({}, {sort:{upvotes:-1}});
+            }
+            $("#noResults").html("");
+            return  Websites.find({}, {sort:{upvotes:-1}});
+        },
+        header:function(){
+            var tab = Session.get("tab");
+            if(tab == "popularNav"){
+                return "Most upvoted websites";
+            }
+            else if(tab == "suggestedNav"){
+                return "Websites suggested for you";
+            }
+            else if(tab == "yourNav"){
+                return "Websites you've added";
+            }
+            else{
+                return "";
+            }
         }
 	});
 
@@ -104,12 +203,14 @@ Router.route("/image/:_id", function(){
 
 Template.website_item.helpers({
     commentsExist:function(){
-        if(this.comments.length > 0){
-            return true;
-        }
-        else{
-            return false;
-        }
+       if(this.comments){
+           if(this.comments.length > 0){
+               return true;
+           }
+           else{
+               return false;
+           }
+       }
 
     }
 });
@@ -119,7 +220,6 @@ Template.website_item.helpers({
 			$("#website_form").toggle('slow');
 		}, 
 		"submit .js-save-website-form":function(event){
-			// here is an example of how to get the url out of the form:
 			var url = event.target.url.value;
 			var title = event.target.title.value;
 			var description = event.target.description.value;
@@ -216,5 +316,12 @@ Template.mainTemplate.events({
         var reg = ".*";
         reg += $searchField.val() + ".*";
         Session.set("searchTerm", reg);
+    },
+    "click .navigation":function(e){
+        var $target = $(e.target);
+        var clickedNav = $target.attr("id");
+        Session.set("tab", clickedNav);
+        $(".active").removeClass("active");
+        $target.parent().addClass("active");
     }
 });

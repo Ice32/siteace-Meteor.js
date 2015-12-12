@@ -1,7 +1,6 @@
 /**
  * Created by Keno on 12/1/2015.
  */
-    // start up function that creates entries in the Websites databases.
 
 Meteor.methods({
     autofill:function(submittedLink){
@@ -50,13 +49,21 @@ Meteor.methods({
     addWebsite:function(website){
         var validator = Meteor.npmRequire('validator');
         if(!validator.isURL(website.url)){
-            throw new Meteor.Error("invalid url", "url should be using the strict formating");
+            throw new Meteor.Error("invalid url", "url should be using the strict formatting");
         }
         if(!Meteor.userId()){
             return false;
         }
         if(Websites.findOne({url:website.url})){
             return "exists";
+        }
+        if(website.title.length > 70){
+            website.title = website.title.substring(0, 67);
+            website.title += "...";
+        }
+        if(website.description.length > 220){
+            website.description = website.description.substring(0, 217);
+            website.description += "...";
         }
         Websites.insert(website, function(error, result){
             userAccounts.update({user:Meteor.userId()}, {$addToSet:{addedWebsites:result}});

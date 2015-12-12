@@ -1,6 +1,7 @@
 # siteace-Meteor.js
 This web-app is the final assignment for the "Introduction to Meteor.js Development" course on Coursera. 
 The most basic layout was done by them. Users can add links, comment other links, upvote them and downvote them.
+Users can also see websites they've added and get suggestions based on websites they've commented or upvoted.
 The whole site is made in Meteor framework.
 Here is the full specification:
 
@@ -40,5 +41,7 @@ Here is the full specification:
     E.g. if I up vote a site entitled ‘Tofu recipes’, 
     it would recommend other sites with ‘tofu’ and ‘recipe’ in their titles or descriptions. "
 
-So far, I have done all of the basic requirements and I'm trying to do the bonus challenges. The first one, 
-"Automatic information", took me quite a lot.
+I have done all of the basic requirements and the bonus challenges. "Automatic information" and "Website recommender" were
+the majority of work on the website.
+
+**ANY SUGGESTIONS WOULD BE HIGHLY APPRECIATED.**

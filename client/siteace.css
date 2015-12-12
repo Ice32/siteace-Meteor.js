@@ -46,3 +46,12 @@
 .downvotes{
     color:#ef2804;
 }
+.container{
+    position:relative;
+}
+header{
+    font-size:30px;
+    color:#337ab7;
+    text-align:center;
+    padding:10px 10px 15px 10px;
+}
