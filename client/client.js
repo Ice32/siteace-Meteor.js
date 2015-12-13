@@ -19,6 +19,7 @@ function addHttp(link){
 }
 
 //got hostname of the link on the client-side
+
 function getLocation(href) {
     var l = document.createElement("a");
     l.href = href;
@@ -46,7 +47,7 @@ function downvote(){
 }
 
 //user for autofill
-Session.set("host", undefined);
+Session.set("url", undefined);
 
 //user isn't searching
 Session.set("searchTerm", undefined);
@@ -83,7 +84,7 @@ Router.route("/image/:_id", function(){
         websites:function(){
             var tab = Session.get("tab");
             $("#searchField").show();
-
+            $("#noResults").html("");
             if(tab == "suggestedNav"){
                 //suggest websites to user based on what he/she has upvoted/commented
                 $("#searchField").hide();
@@ -259,10 +260,10 @@ Template.website_item.helpers({
             var $target = $(event.target);
             var targetValue = $target.val();
             if(targetValue){
-                targetValue = addHttp(targetValue);
-                var host = getLocation(targetValue);
-                if(host){
-                    Session.set("host", host.hostname);
+                var url = addHttp(targetValue);
+                url = url.replace(/\/$/, "");
+                if(url){
+                    Session.set("url", url);
                 }
                 Meteor.call("autofill", targetValue);
             }
@@ -291,8 +292,8 @@ Template.websiteDetail.events({
 
 Template.website_form.helpers({
     titleAutofill:function(){
-        if(Session.get("host")){
-            var title = autofillCollection.findOne({hostname:Session.get("host")});
+        if(Session.get("url")){
+            var title = autofillCollection.findOne({url:Session.get("url")});
             if(title){
                 return title.titleAutofill;
             }
@@ -300,8 +301,8 @@ Template.website_form.helpers({
 
     },
     descriptionAutofill:function(){
-        if(Session.get("host")){
-            var description = autofillCollection.findOne({hostname:Session.get("host")});
+        if(Session.get("url")){
+            var description = autofillCollection.findOne({url:Session.get("url")});
             if(description){
                 return description.descriptionAutofill;
             }

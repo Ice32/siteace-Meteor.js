@@ -10,10 +10,8 @@ Meteor.methods({
                 stringTemp += submittedLink;
                 submittedLink = stringTemp;
             }
-
             var url = Npm.require("url");
             var parsedUrl = url.parse(submittedLink);
-
 
         HTTP.call("GET", submittedLink,
             function(error, result){
@@ -35,9 +33,10 @@ Meteor.methods({
                             }
                         }
                     }
-
-                    if(autofillCollection.find({hostname:parsedUrl.hostname}).count() == 0){
-                        autofillCollection.insert({hostname:parsedUrl.hostname, titleAutofill:titleCheerio, descriptionAutofill:description});
+                    var urlToInsert = parsedUrl.href;
+                    urlToInsert = urlToInsert.replace(/\/$/, "");
+                    if(autofillCollection.find({url:urlToInsert}).count() == 0){
+                        autofillCollection.insert({url:urlToInsert, titleAutofill:titleCheerio, descriptionAutofill:description});
                     }
                 }
                 else{
