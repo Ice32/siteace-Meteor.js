@@ -290,6 +290,21 @@ Template.websiteDetail.events({
     "click .js-downvote":downvote
 });
 
+Template.websiteDetail.helpers({
+    commentsExist:function(){
+        if(this.comments){
+            if(this.comments.length > 0){
+                console.log(this.comments);
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+
+    }
+});
+
 Template.website_form.helpers({
     titleAutofill:function(){
         if(Session.get("url")){

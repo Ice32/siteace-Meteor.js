@@ -17,7 +17,7 @@
 .openComments{
     cursor:pointer;
 }
-.commentDiv{
+#listComment{
     display:none;
 }
 #backButton{
@@ -57,4 +57,7 @@ header{
     color:#337ab7;
     text-align:center;
     padding:10px 10px 15px 10px;
+}
+#singleCommentDetail{
+    font-size:15px;
 }

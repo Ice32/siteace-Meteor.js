@@ -4,7 +4,7 @@
            <div id="backDiv" class="col-lg-1 col-md-2 col-xs-11">
                <a href="/" id="backButton" class="btn  btn-info">Back to the website</a>
            </div>
-           <div class="detailsDiv col-lg-7 col-md-9 col-xs-11 col-lg-offset-1  ">
+           <div class="detailsDiv col-lg-9 col-md-10 col-xs-12 col-lg-offset-1  ">
                <a href="{{url}}"><h1>{{title}}</h1></a>
                <p>{{description}}</p>
                <p>
@@ -12,7 +12,21 @@
                    <span class="downvotes">Downvotes : {{downvotes}} </span> <br />
                    Added on:{{createdOn}}
                </p>
-
+               <div class="commentDiv" id="detailComments">
+                   {{#if commentsExist}}
+                       <h3>Comments by users:</h3>
+                       {{#each comments}}
+                           <div class="singleComment" id="singleCommentDetail">
+                               <p>
+                                   {{this}}
+                               </p>
+                           </div>
+                       {{/each}}
+                   {{else}}
+                       No comments yet...
+                   {{/if}}
+               </div>
+               <br/>
               {{#if currentUser}}
                   <div class="form-group">
                       <form id="submitComment">
